@@ -2,6 +2,42 @@
 Algorithm approach is to create an array that will hold the data and then clean it before creating it and then creating another file with that data
 ''' 
 import csv
+from flask import Flask,request
+
+app = Flask(__name__)
+
+@app.route("/", methods=['POST'])
+def get_clean_data():
+    if request.method == 'POST':
+        file = request.files['file']
+        if file and file.filename and file.filename.split(".")[-1]=="csv":
+          return open_file_and_work(file)
+        else:
+          return "Can only process csv files"
+    else:
+      return "Unexpected Error Happened"
+
+@app.route("/getOtherData", methods=['GET'])
+def get_other_data():
+    if request.method == 'POST':
+        data=open_any_file(request.args['filename'])
+        highest_sales=products_with_highest_sales(data)
+        product_more_500=products_with_more_than_500_unit_sold(data)
+        average=average_price(data)
+        output="Names of Products with Highest Sales of "+str(highest_sales[0][0])+" are :\n"
+        count=0
+        for product in highest_sales:
+         output=output+str(count+1)+". "+product[1]+" - "+product[2]+"\n";
+        count==0
+        output=output+"\nNames of Products with more than 500 unit sold are :\n"
+        for product in product_more_500:
+          output=output+str(count+1)+". "+product[1]+" - "+product[2]+"\n";
+        output=output+"Avergae Price of all Products is : "+str(average)"
+        return output
+    else:
+      return "Unexpected Error Happened"
+        
+        
 
 def clean_data(products):
   new_data=[]
@@ -10,16 +46,16 @@ def clean_data(products):
     return_value=remove_fields(product)
     if return_value!=0:
       new_data.append(return_value)
-      
+
   #calculating the total sales each product
   for product in new_data:  
     product[4]=float(product[2])*float(product[3])
   return new_data
-  
+
 def remove_fields(product):
   critical_data_index=[0,1,2,3];
   sales_data_index=[2,3,4];
-  
+
   for i in critical_data_index:
     if product[i]=="":
       return 0
@@ -67,45 +103,51 @@ def create_new_file(new_data,file_name):
     writer=csv.writer(file)
     writer.writerows(new_data)
   return new_name
-  
-def open_file_and_work(file_name):
+
+def open_file_and_work(file):
   datas = []
   try:
-    with open(file_name,mode='r') as file:
-      csv_reader=csv.reader(file)
-      header=next(csv_reader)
-
-      for product in csv_reader:
+    with open(file,mode='r') as file:
+      csv_file = csv.reader(file.read().splitlines())
+      header = next(csv_file)  # Get the header
+      for product in csv_file:
         datas.append(product)
-    cleaned_data=clean_data(datas)
+      cleaned_data=clean_data(datas)
     #adding the headers to create a new csv file
-    cleaned_data.insert(0,header)
-    new_filename=create_new_file(cleaned_data,file_name)
-    return new_filename
+      cleaned_data.insert(0,header)
+      new_filename=create_new_file(cleaned_data,file)
+      return new_filename
   except FileNotFoundError:
       return "Error: The file was not found."
   except PermissionError:
       return "Error: You do not have permission to access this file."
   except Exception as e:
       return f"An unexpected error occurred: {e}"
-  
-    
 
-file_name="product_sales_50_records.csv"
-extension=file_name.split(".")[-1]
-if(extension=="csv"):
-  output=open_file_and_work(file_name)
-  print(output)
-else:
-  print("Can only process csv files")
-
-
-
-
-
+def open_any_file(file):
+  try:
+    with open(file,mode='r') as file:
+      csv_file = csv.reader(file.read().splitlines())
+      header = next(csv_file)  
+      return csv_file
+  except FileNotFoundError:
+      return "Error: The file was not found."
+  except PermissionError:
+      return "Error: You do not have permission to access this file."
+  except Exception as e:
+      return f"An unexpected error occurred: {e}"
 
 
-  
+if __name__ == '__main__':
+  app.run(debug=True)
 
 
-  
+
+
+
+
+
+
+
+
+
