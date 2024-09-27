@@ -1,8 +1,9 @@
 import { useState } from "react";
 
 
-const cleanURL = "http://localhost:5000/";
-const getDataURL = "http://localhost:5000/getOtherData";
+const cleanURL = "http://192.168.10.18:5000/";
+const getDataURL = "http://192.168.10.18:5000/getOtherData";
+#here am using the ip adress of my network since am using different users
 
 
 function App() {
