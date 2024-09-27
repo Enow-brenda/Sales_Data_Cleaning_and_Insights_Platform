@@ -2,16 +2,29 @@
 Algorithm approach is to create an array that will hold the data and then clean it before creating it and then creating another file with that data
 ''' 
 import csv
-from flask import Flask,request
+from flask import Flask,request,jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/", methods=['POST'])
 def get_clean_data():
     if request.method == 'POST':
         file = request.files['file']
         if file and file.filename and file.filename.split(".")[-1]=="csv":
-          return open_file_and_work(file)
+          fileName=open_file_and_work(file)
+          try:
+            with open(fileName,mode='r') as file:
+              csv_file = csv.reader(file.read().splitlines()) 
+              csv_file = list(csv_file)
+              return jsonify(csv_file)
+          except FileNotFoundError:
+              return "Error: The file was not found."
+          except PermissionError:
+              return "Error: You do not have permission to access this file."
+          except Exception as e:
+              return f"An unexpected error occurred: {e}"
         else:
           return "Can only process csv files"
     else:
@@ -24,7 +37,7 @@ def get_other_data():
         highest_sales=products_with_highest_sales(data)
         product_more_500=products_with_more_than_500_unit_sold(data)
         average=average_price(data)
-        output="Names of Products with Highest Sales of "+str(highest_sales[0][0])+" are :\n"
+        output="Names of Products with Highest Sales of "+str(highest_sales[0][2])+" are :\n"
         count=0
         for product in highest_sales:
          output=output+str(count+1)+". "+product[1]+" - "+product[2]+"\n";
@@ -32,7 +45,7 @@ def get_other_data():
         output=output+"\nNames of Products with more than 500 unit sold are :\n"
         for product in product_more_500:
           output=output+str(count+1)+". "+product[1]+" - "+product[2]+"\n";
-        output=output+"Avergae Price of all Products is : "+str(average)"
+        output=output+"Average Price of all Products is : "+str(average)
         return output
     else:
       return "Unexpected Error Happened"
